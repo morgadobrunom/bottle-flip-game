@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Bottle Pop! — Flip &amp; Land</title>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#1B1036;
+    --night-hi:#311B5E;
+    --soda:#FF7A3D;
+    --cap:#FFD447;
+    --mint:#7FF6D3;
+    --cream:#FFF4E4;
+    --pink:#FF5D8F;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;background:var(--night);font-family:'Nunito',system-ui,sans-serif;
+    user-select:none;-webkit-user-select:none;touch-action:none}
+  #game{position:fixed;inset:0;display:block}
+  .hud{position:fixed;inset:0;pointer-events:none;color:var(--cream)}
+  #score{
+    position:absolute;top:18px;left:50%;transform:translateX(-50%) rotate(-3deg);
+    font-family:'Bungee',cursive;font-size:clamp(44px,9vw,72px);line-height:1;
+    color:var(--cream);text-shadow:0 4px 0 rgba(0,0,0,.35), 0 0 24px rgba(255,122,61,.35);
+    transition:transform .12s ease;
+  }
+  #score.bump{transform:translateX(-50%) rotate(-3deg) scale(1.18)}
+  #best{
+    position:absolute;top:20px;right:18px;font-weight:800;font-size:14px;letter-spacing:.08em;
+    color:var(--mint);opacity:.85;text-transform:uppercase;
+  }
+  #streak{
+    position:absolute;top:calc(18px + clamp(44px,9vw,72px) + 8px);left:50%;transform:translateX(-50%) rotate(-2deg);
+    font-family:'Bungee',cursive;font-size:18px;color:var(--cap);
+    text-shadow:0 2px 0 rgba(0,0,0,.4);opacity:0;transition:opacity .2s;
+  }
+  #streak.on{opacity:1}
+  #toast{
+    position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) rotate(-4deg) scale(.6);
+    font-family:'Bungee',cursive;font-size:clamp(26px,6vw,44px);color:var(--mint);
+    text-shadow:0 3px 0 rgba(0,0,0,.4);opacity:0;pointer-events:none;
+  }
+  #toast.show{animation:toast .8s ease forwards}
+  @keyframes toast{
+    0%{opacity:0;transform:translate(-50%,-50%) rotate(-4deg) scale(.6)}
+    20%{opacity:1;transform:translate(-50%,-50%) rotate(-4deg) scale(1.1)}
+    45%{transform:translate(-50%,-50%) rotate(-4deg) scale(1)}
+    100%{opacity:0;transform:translate(-50%,-64%) rotate(-4deg) scale(1)}
+  }
+  .overlay{
+    position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:14px;background:radial-gradient(ellipse at 50% 40%, rgba(49,27,94,.85), rgba(20,10,44,.94));
+    color:var(--cream);text-align:center;padding:24px;z-index:10;
+  }
+  .overlay.hidden{display:none}
+  .title{
+    font-family:'Bungee',cursive;font-size:clamp(42px,10vw,84px);line-height:.95;
+    color:var(--soda);transform:rotate(-3deg);
+    text-shadow:0 5px 0 #8f3a12, 0 0 40px rgba(255,122,61,.45);
+  }
+  .title span{color:var(--mint);text-shadow:0 5px 0 #1e6b57, 0 0 40px rgba(127,246,211,.4)}
+  .sub{font-weight:800;font-size:clamp(15px,3vw,19px);max-width:420px;opacity:.9}
+  .sub b{color:var(--cap)}
+  .btn{
+    pointer-events:auto;cursor:pointer;border:none;margin-top:8px;
+    font-family:'Bungee',cursive;font-size:20px;color:#3a1503;
+    background:linear-gradient(180deg,#FFD447,#FFAE2E);padding:14px 34px;border-radius:999px;
+    box-shadow:0 6px 0 #a05f00, 0 10px 24px rgba(0,0,0,.4);transform:rotate(-1.5deg);
+    transition:transform .08s ease, box-shadow .08s ease;
+  }
+  .btn:active{transform:rotate(-1.5deg) translateY(4px);box-shadow:0 2px 0 #a05f00, 0 6px 14px rgba(0,0,0,.4)}
+  .btn:focus-visible{outline:3px solid var(--mint);outline-offset:3px}
+  .finalscore{font-family:'Bungee',cursive;font-size:clamp(56px,14vw,110px);color:var(--cream);
+    line-height:1;text-shadow:0 5px 0 rgba(0,0,0,.4)}
+  .newbest{font-family:'Bungee',cursive;color:var(--cap);font-size:20px;animation:blink 1s infinite}
+  @keyframes blink{50%{opacity:.4}}
+  @media (prefers-reduced-motion: reduce){
+    #toast.show{animation:none;opacity:1}
+    .newbest{animation:none}
+  }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div class="hud">
+  <div id="score">0</div>
+  <div id="streak">PERFECT ×2</div>
+  <div id="best">Best 0</div>
+  <div id="toast">PERFECT!</div>
+</div>
+
+<div class="overlay" id="menu">
+  <div class="title">BOTTLE<br><span>POP!</span></div>
+  <div class="sub"><b>Hold</b> anywhere to charge the flip, <b>release</b> to send it flying.
+    Land the bottle on the next crate. Nail the center stripe for <b>PERFECT +2</b>.
+    Crates shrink, drift and wander the further you go.</div>
+  <button class="btn" id="playBtn">HOLD TO FLIP</button>
+</div>
+
+<div class="overlay hidden" id="over">
+  <div class="title" style="font-size:clamp(30px,7vw,54px)">BOTTLE DOWN</div>
+  <div class="finalscore" id="finalScore">0</div>
+  <div class="newbest" id="newBest" style="display:none">★ NEW BEST ★</div>
+  <div class="sub" id="overSub"></div>
+  <button class="btn" id="retryBtn">FLIP AGAIN</button>
+</div>
+
+<script>
+(() => {
+'use strict';
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const bestEl = document.getElementById('best');
+const streakEl = document.getElementById('streak');
+const toastEl = document.getElementById('toast');
+const menuEl = document.getElementById('menu');
+const overEl = document.getElementById('over');
+const finalScoreEl = document.getElementById('finalScore');
+const newBestEl = document.getElementById('newBest');
+const overSubEl = document.getElementById('overSub');
+
+let W = 0, H = 0, dpr = 1, groundY = 0;
+function resize(){
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  groundY = H * 0.72;
+}
+window.addEventListener('resize', resize);
+resize();
+
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- audio ---------- */
+let AC = null;
+function audio(){ if(!AC){ try{ AC = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return AC; }
+function tone(f0, f1, dur, type, vol){
+  const ac = audio(); if(!ac) return;
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.setValueAtTime(f0, ac.currentTime);
+  o.frequency.exponentialRampToValueAtTime(Math.max(f1,1), ac.currentTime + dur);
+  g.gain.setValueAtTime(vol, ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+  o.connect(g).connect(ac.destination);
+  o.start(); o.stop(ac.currentTime + dur);
+}
+function fizz(){
+  const ac = audio(); if(!ac) return;
+  const len = ac.sampleRate * 0.3, buf = ac.createBuffer(1, len, ac.sampleRate);
+  const d = buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 2);
+  const src = ac.createBufferSource(); src.buffer = buf;
+  const hp = ac.createBiquadFilter(); hp.type='highpass'; hp.frequency.value = 2500;
+  const g = ac.createGain(); g.gain.value = 0.25;
+  src.connect(hp).connect(g).connect(ac.destination); src.start();
+}
+const sndPop  = () => tone(340, 170, 0.1, 'sine', 0.3);
+const sndThud = () => tone(130, 55, 0.18, 'triangle', 0.35);
+const sndTick = () => tone(520, 480, 0.03, 'square', 0.04);
+
+/* ---------- game state ---------- */
+const G = 2300;                 // gravity px/s²
+const BOTTLE_H = 46, BOTTLE_W = 17;
+let state = 'menu';             // menu | idle | charge | fly | settle | dead
+let score = 0, best = 0, streak = 0, throws = 0;
+let platforms = [];             // {cx, baseCx, w, move:{amp,speed,phase}|null, locked}
+let curIdx = 0;                 // platform the bottle stands on
+let camX = 0, camTarget = 0;
+let chargeT = 0, power = 0, lastTickBand = -1;
+let bottle = { x:0, y:0, vx:0, vy:0, rot:0, spinRate:0, dead:false, tipDir:1 };
+let settleT = 0, wobbleAmp = 0, deadT = 0, shake = 0;
+let particles = [];
+let stars = [];
+for(let i=0;i<70;i++) stars.push({x:Math.random()*2000, y:Math.random(), r:Math.random()*1.4+0.4, tw:Math.random()*6});
+
+const rand = (a,b) => a + Math.random()*(b-a);
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+
+function difficulty(n){
+  return {
+    w: clamp(94 - n*2.4, 34, 94),
+    gapMin: 74 + Math.min(n*4, 118),
+    gapMax: 138 + Math.min(n*6, 188),
+    moveP: n >= 8 ? Math.min(0.15 + (n-8)*0.03, 0.55) : 0,
+    moveAmp: 18 + Math.min(n, 42),
+    moveSpd: rand(0.9, 1.1 + Math.min(n*0.05, 1.4)),
+  };
+}
+
+function spawnPlatform(){
+  const prev = platforms[platforms.length-1];
+  const d = difficulty(score + (platforms.length - 1 - curIdx));
+  const w = d.w;
+  const gap = rand(d.gapMin, d.gapMax);
+  const cx = prev.baseCx + prev.w/2 + (prev.move ? prev.move.amp : 0) + gap + w/2;
+  let move = null;
+  if(Math.random() < d.moveP){
+    move = { amp: d.moveAmp, speed: d.moveSpd, phase: rand(0, Math.PI*2) };
+  }
+  platforms.push({ cx, baseCx: cx, w, move, locked:false });
+}
+
+function resetGame(){
+  score = 0; streak = 0; throws = 0;
+  scoreEl.textContent = '0';
+  streakEl.classList.remove('on');
+  platforms = [{ cx: 120, baseCx: 120, w: 110, move: null, locked: true }];
+  curIdx = 0;
+  spawnPlatform(); spawnPlatform();
+  camX = 0; camTarget = 0;
+  placeBottleOn(0);
+  particles = [];
+  state = 'idle';
+}
+
+function placeBottleOn(i){
+  curIdx = i;
+  const p = platforms[i];
+  p.locked = true;
+  bottle.x = p.cx; bottle.y = groundY; bottle.rot = 0; bottle.dead = false;
+  camTarget = bottle.x - W * 0.3;
+}
+
+function launch(p){
+  const vx = 130 + p * 430;
+  const vy = 430 + p * 540;
+  bottle.vx = vx; bottle.vy = -vy;
+  const airtime = 2 * vy / G;
+  const spins = Math.max(1, Math.round(airtime * 1.7));
+  bottle.spinRate = (spins * Math.PI * 2) / airtime;
+  bottle.rot = 0;
+  throws++;
+  state = 'fly';
+  tone(200, 420, 0.12, 'sine', 0.15);
+}
+
+/* ---------- landing ---------- */
+function tryLand(){
+  for(let i = curIdx; i < platforms.length; i++){
+    const p = platforms[i];
+    const dx = bottle.x - p.cx;
+    if(Math.abs(dx) <= p.w/2 + 4){
+      const frac = Math.abs(dx) / (p.w/2);
+      if(frac > 1){                       // clipped the very lip → tip over
+        bottle.tipDir = Math.sign(dx) || 1;
+        return { type:'tip', plat:i };
+      }
+      if(frac < 0.34 && i > curIdx) return { type:'perfect', plat:i };
+      if(frac > 0.78) return { type:'edge', plat:i };
+      return { type:'ok', plat:i };
+    }
+  }
+  return null;
+}
+
+function landSuccess(res){
+  const gained = res.plat > curIdx;
+  const p = platforms[res.plat];
+  if(p.move){ p.move = null; p.baseCx = p.cx; }   // landing pins the crate in place
+  placeBottleOn(res.plat);
+  bottle.y = groundY;
+
+  if(gained){
+    if(res.type === 'perfect'){
+      streak++;
+      score += 2;
+      showToast(streak > 1 ? `PERFECT ×${streak}!` : 'PERFECT!');
+      streakEl.textContent = `PERFECT ×${streak}`;
+      streakEl.classList.add('on');
+      fizz(); sndPop();
+      burst(bottle.x, groundY - BOTTLE_H, 26, true);
+    } else {
+      streak = 0;
+      streakEl.classList.remove('on');
+      score += 1;
+      sndPop();
+      burst(bottle.x, groundY, 12, false);
+    }
+    scoreEl.textContent = score;
+    scoreEl.classList.add('bump');
+    setTimeout(()=>scoreEl.classList.remove('bump'), 130);
+    while(platforms.length - 1 - curIdx < 2) spawnPlatform();
+  } else {
+    sndPop();
+    burst(bottle.x, groundY, 8, false);
+  }
+  wobbleAmp = res.type === 'edge' ? 0.5 : 0.22;
+  settleT = 0;
+  state = 'settle';
+}
+
+function fail(reason){
+  bottle.dead = true;
+  deadT = 0;
+  shake = 10;
+  sndThud();
+  state = 'dead';
+  overSubEl.textContent = reason;
+  if(score > best){ best = score; bestEl.textContent = 'Best ' + best; newBestEl.style.display = 'block'; }
+  else newBestEl.style.display = 'none';
+  finalScoreEl.textContent = score;
+  setTimeout(()=> overEl.classList.remove('hidden'), 700);
+}
+
+function showToast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.remove('show');
+  void toastEl.offsetWidth;
+  toastEl.classList.add('show');
+}
+
+function burst(x, y, n, big){
+  if(reducedMotion) n = Math.min(n, 6);
+  for(let i=0;i<n;i++){
+    const a = rand(-Math.PI, 0), sp = rand(60, big?300:170);
+    particles.push({
+      x, y, vx: Math.cos(a)*sp, vy: Math.sin(a)*sp,
+      r: rand(2, big?5:3.5), life: rand(0.5, 0.9),
+      t: 0, mint: big || Math.random() < 0.4
+    });
+  }
+}
+
+/* ---------- input ---------- */
+let holding = false;
+function pressStart(e){
+  if(e.target.closest('.btn')) return;
+  audio();
+  if(state === 'idle'){
+    holding = true; chargeT = 0; power = 0; lastTickBand = -1;
+    state = 'charge';
+  }
+}
+function pressEnd(){
+  if(!holding) return;
+  holding = false;
+  if(state === 'charge') launch(power);
+}
+window.addEventListener('pointerdown', pressStart);
+window.addEventListener('pointerup', pressEnd);
+window.addEventListener('pointercancel', pressEnd);
+window.addEventListener('keydown', e => {
+  if(e.code === 'Space' && !e.repeat){
+    e.preventDefault();
+    if(state === 'menu'){ startGame(); return; }
+    if(!overEl.classList.contains('hidden')){ restart(); return; }
+    pressStart(e);
+  }
+});
+window.addEventListener('keyup', e => { if(e.code === 'Space') pressEnd(); });
+
+function startGame(){ menuEl.classList.add('hidden'); resetGame(); }
+function restart(){ overEl.classList.add('hidden'); resetGame(); }
+document.getElementById('playBtn').addEventListener('click', startGame);
+document.getElementById('retryBtn').addEventListener('click', restart);
+
+/* ---------- drawing ---------- */
+function drawBackground(t){
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#150C2E');
+  g.addColorStop(0.55, '#2A1752');
+  g.addColorStop(1, '#3A1F63');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  // stars
+  ctx.save();
+  for(const s of stars){
+    const sx = ((s.x - camX*0.12) % (W+200) + (W+200)) % (W+200) - 100;
+    const sy = s.y * groundY * 0.85;
+    const a = 0.4 + 0.4 * Math.sin(t*0.9 + s.tw);
+    ctx.globalAlpha = a;
+    ctx.fillStyle = '#FFF4E4';
+    ctx.beginPath(); ctx.arc(sx, sy, s.r, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+
+  // moon-ish soda cap
+  ctx.save();
+  const mx = W*0.78 - camX*0.05 % W, my = H*0.16;
+  ctx.globalAlpha = 0.9;
+  ctx.fillStyle = '#FFD447';
+  ctx.beginPath(); ctx.arc(mx, my, 34, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = 'rgba(58,21,3,.35)'; ctx.lineWidth = 3;
+  for(let i=0;i<12;i++){
+    const a = i/12*Math.PI*2;
+    ctx.beginPath();
+    ctx.moveTo(mx+Math.cos(a)*28, my+Math.sin(a)*28);
+    ctx.lineTo(mx+Math.cos(a)*34, my+Math.sin(a)*34);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // skyline silhouette (parallax)
+  ctx.save();
+  ctx.fillStyle = 'rgba(15,8,34,0.8)';
+  const px = -((camX*0.3) % 260);
+  for(let x = px - 260; x < W + 260; x += 130){
+    const h = 60 + ((x*7919 + 31) % 90);
+    ctx.fillRect(x, groundY + 40 - h, 90, h + 200);
+  }
+  ctx.restore();
+
+  // abyss below ground
+  const g2 = ctx.createLinearGradient(0, groundY, 0, H);
+  g2.addColorStop(0, 'rgba(10,5,24,0)');
+  g2.addColorStop(1, 'rgba(8,4,20,0.9)');
+  ctx.fillStyle = g2;
+  ctx.fillRect(0, groundY, W, H - groundY);
+}
+
+function drawPlatform(p, t){
+  const x = p.cx - camX;
+  if(x + p.w/2 < -60 || x - p.w/2 > W + 60) return;
+  const top = groundY, w = p.w;
+  const bodyH = H - top;
+
+  // crate body
+  ctx.save();
+  ctx.translate(x, 0);
+  const grad = ctx.createLinearGradient(0, top, 0, top + 140);
+  grad.addColorStop(0, '#5A2FA3');
+  grad.addColorStop(1, '#2E1B5B');
+  ctx.fillStyle = grad;
+  ctx.fillRect(-w/2, top, w, bodyH);
+  // slats
+  ctx.strokeStyle = 'rgba(255,244,228,0.08)';
+  ctx.lineWidth = 2;
+  for(let sx = -w/2 + 8; sx < w/2 - 4; sx += 12){
+    ctx.beginPath(); ctx.moveTo(sx, top + 10); ctx.lineTo(sx, top + 120); ctx.stroke();
+  }
+  // top slab
+  ctx.fillStyle = '#7FF6D3';
+  roundRect(-w/2 - 3, top - 9, w + 6, 12, 6);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
+  roundRect(-w/2 - 3, top - 2, w + 6, 5, 3);
+  ctx.fill();
+  // perfect stripe
+  const pw = w * 0.34;
+  ctx.fillStyle = '#FFD447';
+  roundRect(-pw/2, top - 9, pw, 5, 3);
+  ctx.fill();
+  // drift indicator
+  if(p.move){
+    ctx.fillStyle = 'rgba(255,93,143,0.9)';
+    const bob = Math.sin(t*4) * 2;
+    tri(-w/2 - 12, top - 3 + bob, -1);
+    tri(w/2 + 12, top - 3 + bob, 1);
+  }
+  ctx.restore();
+}
+function tri(x, y, dir){
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x - 7*dir, y - 5);
+  ctx.lineTo(x - 7*dir, y + 5);
+  ctx.closePath(); ctx.fill();
+}
+function roundRect(x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+
+function drawBottle(t){
+  const x = bottle.x - camX;
+  let y = bottle.y, rot = bottle.rot, squash = 1;
+
+  if(state === 'charge'){
+    squash = 1 - power * 0.18;
+    rot = -power * 0.14;
+  }
+  if(state === 'settle'){
+    const k = settleT / 0.45;
+    rot = Math.sin(k * Math.PI * 3) * wobbleAmp * (1 - k);
+  }
+  if(state === 'dead'){
+    rot = bottle.rot;
+  }
+
+  ctx.save();
+  // shadow
+  if(state !== 'dead' || bottle.y < groundY + 40){
+    const hAbove = clamp((groundY - y) / 300, 0, 1);
+    ctx.globalAlpha = 0.35 * (1 - hAbove*0.7);
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(x, groundY + 3, 16 * (1 - hAbove*0.4), 4, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.translate(x, y);
+  ctx.rotate(rot);
+  ctx.scale(1/squash * 0.94 + 0.06, squash);
+  ctx.translate(0, -BOTTLE_H/2);   // pivot = bottom center
+
+  const bw = BOTTLE_W, bh = BOTTLE_H;
+  // body
+  ctx.fillStyle = '#FF7A3D';
+  roundRect(-bw/2, -bh/2 + 8, bw, bh - 8, 6);
+  ctx.fill();
+  // neck
+  ctx.fillStyle = '#FF7A3D';
+  roundRect(-bw/4, -bh/2 - 2, bw/2, 12, 3);
+  ctx.fill();
+  // cap
+  ctx.fillStyle = '#FFD447';
+  roundRect(-bw/4 - 1, -bh/2 - 7, bw/2 + 2, 7, 2);
+  ctx.fill();
+  // label
+  ctx.fillStyle = '#FFF4E4';
+  ctx.fillRect(-bw/2, -2, bw, 12);
+  ctx.fillStyle = '#FF5D8F';
+  ctx.fillRect(-bw/2, 2, bw, 4);
+  // gloss
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  roundRect(-bw/2 + 2.5, -bh/2 + 10, 3, bh - 18, 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawChargeUI(){
+  if(state !== 'charge') return;
+  const x = bottle.x - camX, y = groundY - BOTTLE_H - 26;
+  // power ring
+  ctx.save();
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = 'rgba(255,244,228,0.18)';
+  ctx.beginPath(); ctx.arc(x, y, 17, 0, Math.PI*2); ctx.stroke();
+  const hue = power < 0.75 ? '#7FF6D3' : '#FF5D8F';
+  ctx.strokeStyle = hue;
+  ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(x, y, 17, -Math.PI/2, -Math.PI/2 + power * Math.PI*2); ctx.stroke();
+  ctx.restore();
+
+  // teaching dots for the first throws
+  if(throws < 3){
+    const vx = 130 + power*430, vy = 430 + power*540;
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,244,228,0.45)';
+    for(let i=1;i<=11;i++){
+      const tt = i * 0.075;
+      const dx = bottle.x + vx*tt - camX;
+      const dy = groundY - BOTTLE_H/2 - (vy*tt - 0.5*G*tt*tt);
+      if(dy > groundY + 10) break;
+      ctx.beginPath(); ctx.arc(dx, dy, 2.6, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+function drawParticles(dt){
+  for(let i = particles.length-1; i >= 0; i--){
+    const p = particles[i];
+    p.t += dt;
+    if(p.t > p.life){ particles.splice(i,1); continue; }
+    p.vy += 500*dt * (p.mint ? -0.3 : 1);  // mint bubbles float
+    p.x += p.vx*dt; p.y += p.vy*dt;
+    const a = 1 - p.t/p.life;
+    ctx.globalAlpha = a;
+    ctx.fillStyle = p.mint ? '#7FF6D3' : '#FFD447';
+    ctx.beginPath(); ctx.arc(p.x - camX, p.y, p.r, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ---------- main loop ---------- */
+let last = performance.now();
+function frame(now){
+  const dt = Math.min((now - last)/1000, 0.033);
+  last = now;
+  const t = now/1000;
+
+  // platform drift
+  for(let i=0;i<platforms.length;i++){
+    const p = platforms[i];
+    if(p.move && !p.locked){
+      p.cx = p.baseCx + Math.sin(t*p.move.speed + p.move.phase) * p.move.amp;
+    }
+  }
+
+  // state updates
+  if(state === 'charge'){
+    chargeT += dt;
+    const cyc = (chargeT / 0.85) % 2;
+    power = cyc < 1 ? cyc : 2 - cyc;      // ping-pong 0→1→0
+    const band = Math.floor(power*8);
+    if(band !== lastTickBand){ lastTickBand = band; sndTick(); }
+  }
+  else if(state === 'fly'){
+    bottle.vy += G*dt;
+    bottle.x += bottle.vx*dt;
+    bottle.y += bottle.vy*dt;
+    bottle.rot += bottle.spinRate*dt;
+    if(bottle.vy > 0 && bottle.y >= groundY){
+      const res = tryLand();
+      if(res && res.type !== 'tip'){
+        bottle.rot = 0;
+        landSuccess(res);
+      } else if(res && res.type === 'tip'){
+        bottle.y = groundY;
+        bottle.vy = -160; bottle.vx = bottle.tipDir * 90;
+        bottle.spinRate = bottle.tipDir * 7;
+        fail('Clipped the lip of the crate.');
+      } else if(bottle.y > groundY + 80){
+        fail(bottle.vx > 0 && bottle.x > platforms[curIdx].cx + platforms[curIdx].w ? 'Down into the gap.' : 'Short of the crate.');
+      }
+    }
+  }
+  else if(state === 'settle'){
+    settleT += dt;
+    if(settleT >= 0.45) state = 'idle';
+  }
+  else if(state === 'dead'){
+    deadT += dt;
+    bottle.vy += G*dt;
+    bottle.x += bottle.vx*dt;
+    bottle.y += bottle.vy*dt;
+    bottle.rot += bottle.spinRate*dt;
+  }
+
+  // camera
+  camTarget = bottle.x - W*0.3;
+  camX += (camTarget - camX) * Math.min(1, dt*5);
+  if(shake > 0){
+    camX += rand(-shake, shake);
+    shake = Math.max(0, shake - dt*40);
+  }
+
+  // draw
+  drawBackground(t);
+  for(const p of platforms) drawPlatform(p, t);
+  drawParticles(dt);
+  if(state !== 'menu') drawBottle(t);
+  drawChargeUI();
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
