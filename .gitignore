@@ -1,0 +1,11 @@
+node_modules/
+dist/
+dist-e2e/
+.turbo/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+.pglite/
