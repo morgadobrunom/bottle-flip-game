@@ -1,3 +1,4 @@
+/** QR / typed token landing. Unverified players stash the code and go to login. */
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { useMe, useRedeemToken, useTokenInfo } from '../api/hooks';

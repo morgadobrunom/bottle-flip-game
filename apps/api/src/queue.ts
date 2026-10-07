@@ -1,3 +1,7 @@
+/**
+ * pg-boss queue. Credit jobs are singleton-keyed on rewardId so retries never
+ * double-credit. Tests use MemoryQueue instead of Postgres.
+ */
 import PgBoss from 'pg-boss';
 
 export const JOBS = {

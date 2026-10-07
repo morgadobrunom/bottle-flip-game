@@ -8,6 +8,10 @@
   },
   "scripts": {
     "dev": "turbo run dev --parallel",
+    "dev:db": "pnpm --filter @bottle-flip/api db:dev",
+    "dev:api": "pnpm --filter @bottle-flip/api dev",
+    "dev:worker": "pnpm --filter @bottle-flip/api dev:worker",
+    "dev:web": "pnpm --filter @bottle-flip/web dev",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",

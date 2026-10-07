@@ -1,3 +1,4 @@
+/** Post-claim screen. Polls GET /rewards/:id until credited or failed. */
 import type { Reward } from '@bottle-flip/content';
 import type { CSSProperties } from 'react';
 import { Link, useParams } from 'react-router';

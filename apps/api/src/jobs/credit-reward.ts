@@ -1,3 +1,7 @@
+/**
+ * Worker: move a reward pending → processing → credited (or failed).
+ * Throws so pg-boss retries; on exhaustion, marks failed and refunds KES.
+ */
 import { describeReward } from '@bottle-flip/content';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { Db } from '../db/client';

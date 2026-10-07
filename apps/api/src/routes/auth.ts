@@ -1,3 +1,7 @@
+/**
+ * Device sessions, OTP, refresh, logout. The refresh cookie is scoped to /auth
+ * so the rest of the API never sees it.
+ */
 import { OtpRequestBody, OtpVerifyBody, type OtpRequestResponse, type OtpVerifyResponse, type SessionResponse } from '@bottle-flip/shared';
 import { eq } from 'drizzle-orm';
 import type { FastifyPluginAsync, FastifyReply } from 'fastify';

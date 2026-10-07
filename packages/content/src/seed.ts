@@ -1,3 +1,7 @@
+/**
+ * Launch catalog: six bottles, six backgrounds, four missions, one campaign.
+ * Sponsored skins unlock when the weekly-data mission is claimed.
+ */
 import type { Background, Bottle, Campaign, Catalog, Mission } from './schemas';
 
 export const DEFAULT_BOTTLE_ID = 'classic';

@@ -1,3 +1,7 @@
+/**
+ * Local Postgres without Docker: PGlite (WASM) speaking the wire protocol so
+ * node-postgres and pg-boss can connect as if this were a real server.
+ */
 import { PGlite } from '@electric-sql/pglite';
 import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
 

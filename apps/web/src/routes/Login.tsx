@@ -1,3 +1,4 @@
+/** Step 1 of login: Kenyan number, optional token, required terms + optional brand SMS. */
 import { normalizeKenyanPhone } from '@bottle-flip/shared';
 import { useState, type FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router';

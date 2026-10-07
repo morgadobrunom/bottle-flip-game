@@ -1,3 +1,4 @@
+/** localStorage `/me` + equipped theme; sessionStorage holds a pending bottle token. */
 import type { Background, Bottle } from '@bottle-flip/content';
 import type { MeResponse } from '@bottle-flip/shared';
 

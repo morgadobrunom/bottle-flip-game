@@ -1,3 +1,4 @@
+/** Shared chrome: overlay screens, coin pill, snackbars. Pointers here don't flip the bottle. */
 import type { Background, Bottle } from '@bottle-flip/content';
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';

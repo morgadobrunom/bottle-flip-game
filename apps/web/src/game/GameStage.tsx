@@ -1,3 +1,7 @@
+/**
+ * Persistent canvas + GameController. Routes call useGame()/useHud().
+ * VITE_E2E (or Vite DEV) exposes window.__bf for scripted play tests.
+ */
 import { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { useCatalog, useMe } from '../api/hooks';
 import { saveTheme } from '../state/cache';

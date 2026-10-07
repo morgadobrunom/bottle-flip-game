@@ -1,3 +1,4 @@
+/** App shell: Sentry, Query, session, snackbars, router. Layout always mounts GameStage. */
 import * as Sentry from '@sentry/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';

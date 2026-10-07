@@ -1,3 +1,7 @@
+/**
+ * Boots an anonymous or resumed session, hydrates `/me` from localStorage so
+ * Home can paint before the network returns.
+ */
 import type { MeResponse } from '@bottle-flip/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';

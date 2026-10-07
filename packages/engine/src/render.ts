@@ -1,3 +1,7 @@
+/**
+ * Canvas 2D drawing for Sim. Cosmetic only: stars and particles use Math.random()
+ * and never affect scoring. Skin colors come from the catalog Theme.
+ */
 import type { Background, Bottle } from '@bottle-flip/content';
 import { BOTTLE_H, BOTTLE_W, G, SETTLE_TICKS, launchVelocity, type Platform, type Sim, type SimEvent } from './sim';
 

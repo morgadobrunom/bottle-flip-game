@@ -1,3 +1,4 @@
+/** Under-cap token lookup and one-time redemption onto a verified player. */
 import type { TokenInfoResponse, TokenRedeemResult } from '@bottle-flip/shared';
 import { and, count, eq, gt, isNull } from 'drizzle-orm';
 import type { Db } from '../db/client';

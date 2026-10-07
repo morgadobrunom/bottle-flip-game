@@ -1,3 +1,7 @@
+/**
+ * Leaderboard and mission windows in a named IANA timezone (Africa/Nairobi).
+ * Keys are stable strings: YYYY-MM-DD, YYYY-Www, YYYY-MM, or "once".
+ */
 import type { MissionPeriod } from '@bottle-flip/content';
 
 export interface Window {
@@ -16,6 +20,7 @@ const DAY_MS = 86_400_000;
 const pad = (n: number) => String(n).padStart(2, '0');
 
 function offsetMs(date: Date, timeZone: string): number {
+  // Difference between "wall clock in tz" and UTC, used to convert Date → local calendar day.
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone,
     hourCycle: 'h23',

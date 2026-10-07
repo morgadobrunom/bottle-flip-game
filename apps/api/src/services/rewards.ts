@@ -1,3 +1,7 @@
+/**
+ * Campaign budget: lock the campaign row, enforce daily data cap, unique
+ * sourceRef. Must run inside a transaction with the claim.
+ */
 import { describeReward, rewardCostKes, type Reward } from '@bottle-flip/content';
 import { maskPhone, windowFor, type RewardView } from '@bottle-flip/shared';
 import { and, eq, gte, lt, ne, sql } from 'drizzle-orm';

@@ -1,3 +1,7 @@
+/**
+ * Background worker. Shares the API schema and providers. Cron times are
+ * Africa/Nairobi so leaderboard windows close just after local midnight/hour.
+ */
 import './instrument';
 import * as Sentry from '@sentry/node';
 import { loadConfig } from './config';

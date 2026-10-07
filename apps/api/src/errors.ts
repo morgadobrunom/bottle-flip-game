@@ -1,3 +1,4 @@
+/** Typed HTTP errors the Fastify error handler maps to JSON `{ error, message }`. */
 export class AppError extends Error {
   constructor(
     readonly statusCode: number,

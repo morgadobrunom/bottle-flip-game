@@ -1,3 +1,7 @@
+/**
+ * Safaricom data/airtime adapter. Stub is idempotent on `reference` (the reward id).
+ * Swap for the partner API without touching job code.
+ */
 import type { Config } from '../config';
 
 export interface CreditResult {

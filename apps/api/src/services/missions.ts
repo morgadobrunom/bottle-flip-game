@@ -1,3 +1,7 @@
+/**
+ * Mission progress from live stats (games, best run, streaks, tokens, verified).
+ * Claims grant coins/items immediately and enqueue a credit job for data/airtime.
+ */
 import { describeReward, type Mission, type MissionStep } from '@bottle-flip/content';
 import { windowFor, type ClaimResponse, type MissionStepView, type MissionView, type Window } from '@bottle-flip/shared';
 import { and, asc, count, eq, gte, lt, max, sql } from 'drizzle-orm';

@@ -1,3 +1,7 @@
+/**
+ * Gameplay: start a server run (or offline practice), drive the controller,
+ * submit the input log on miss, show game-over + weekly progress.
+ */
 import { coinsFor } from '@bottle-flip/content';
 import { randomSeed, type FailReason, type Sim } from '@bottle-flip/engine';
 import type { MeResponse, RunSubmitResponse } from '@bottle-flip/shared';

@@ -1,3 +1,4 @@
+/** Init Sentry before any other API module so boot errors are captured. */
 import * as Sentry from '@sentry/node';
 
 if (process.env.SENTRY_DSN) {

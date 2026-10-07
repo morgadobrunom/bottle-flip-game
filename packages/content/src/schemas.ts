@@ -1,3 +1,8 @@
+/**
+ * Campaign content contracts. Bottles, backgrounds, missions, and the campaign
+ * itself are data, so a new brand activation is a seed change rather than a
+ * frontend rewrite. The API stores these as JSONB after validating here.
+ */
 import { z } from 'zod';
 
 export const ColorSchema = z

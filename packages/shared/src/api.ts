@@ -1,3 +1,7 @@
+/**
+ * HTTP contract: Zod request bodies (parsed by the API) and response types the
+ * web app consumes. Player phones are always masked in these views.
+ */
 import type { Background, Bottle, LeaderboardPeriod, Mission, MissionStep, Reward } from '@bottle-flip/content';
 import { z } from 'zod';
 import type { ItemStatus } from './items';

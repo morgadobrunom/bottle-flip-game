@@ -1,3 +1,7 @@
+/**
+ * Server-side anti-cheat: replay a client's input log against a fresh Sim(seed).
+ * The run must end in a miss. Claimed scores are compared to result() by the API.
+ */
 import { Sim, TICKS_PER_SECOND, type RunInput, type RunResult } from './sim';
 
 export const MAX_RUN_TICKS = 30 * 60 * TICKS_PER_SECOND;

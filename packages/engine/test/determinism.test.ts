@@ -1,3 +1,7 @@
+/**
+ * Golden-file test: replay recorded bot runs and assert identical results.
+ * Update fixtures with `pnpm --filter @bottle-flip/engine fixtures:update` if physics change.
+ */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';

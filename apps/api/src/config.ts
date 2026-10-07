@@ -1,3 +1,7 @@
+/**
+ * Process env for the API and worker. Staging/production refuse the baked-in
+ * JWT_SECRET / OTP_PEPPER and require secure cookies.
+ */
 import { z } from 'zod';
 
 const bool = z

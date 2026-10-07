@@ -1,3 +1,4 @@
+/** Home overlay on the idle canvas: play, login/rewards, customize, token. */
 import { Link } from 'react-router';
 import { useMe } from '../api/hooks';
 import { useSession } from '../api/session';

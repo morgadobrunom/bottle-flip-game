@@ -1,3 +1,4 @@
+/** SMS adapter. ConsoleSms is the local/dev implementation (OTP lands in stdout). */
 import type { Config } from '../config';
 
 export interface SmsProvider {

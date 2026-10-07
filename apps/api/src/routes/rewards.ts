@@ -1,3 +1,4 @@
+/** Printed tokens, redemption, and live reward status for the "you won" screen. */
 import type { RewardView, TokenInfoResponse, TokenRedeemResult } from '@bottle-flip/shared';
 import { and, eq } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';

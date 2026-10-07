@@ -1,3 +1,6 @@
+/**
+ * Equipped bottle/background: live catalog first, then last cached theme, then seed defaults.
+ */
 import { DEFAULT_BACKGROUND_ID, DEFAULT_BOTTLE_ID, seedBackgrounds, seedBottles, type Background, type Bottle } from '@bottle-flip/content';
 import type { CatalogResponse, PlayerView } from '@bottle-flip/shared';
 import type { Theme } from '@bottle-flip/engine/render';

@@ -1,6 +1,17 @@
+/**
+ * Deterministic bottle-flip simulation.
+ *
+ * World space: ground at y = 0, +y down, +x to the right. The bottle stands on
+ * platforms (crates). Hold to charge, release to launch; landing past the current
+ * crate scores a flip. A miss (lip / gap / short) ends the run — no lives.
+ *
+ * Every gameplay random draw goes through the seeded mulberry32 RNG. Time advances
+ * in fixed STEP seconds so a recorded input log replays identically on the server.
+ */
 import { dsin } from './dmath';
 import { mulberry32, type Rng } from './rng';
 
+/** Simulation tick length in seconds. Rendering interpolates between ticks. */
 export const STEP = 1 / 120;
 export const TICKS_PER_SECOND = 120;
 export const G = 2300;
@@ -53,14 +64,11 @@ export interface RunResult {
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
+/** Maps charge power 0..1 to launch speed. Same formula the original HTML used. */
 export function launchVelocity(power: number): { vx: number; vy: number } {
   return { vx: 130 + power * 430, vy: 430 + power * 540 };
 }
 
-/**
- * The game simulation in world space: ground at y = 0, positive y downward.
- * One call to step() advances exactly STEP seconds.
- */
 export class Sim {
   readonly seed: number;
   readonly inputs: RunInput[] = [];
@@ -140,6 +148,7 @@ export class Sim {
     switch (this.state) {
       case 'charge': {
         this.chargeTicks++;
+        // Triangle wave 0→1→0 so a long hold is not always full power.
         const cyc = ((this.chargeTicks * STEP) / CHARGE_PERIOD) % 2;
         this.power = cyc < 1 ? cyc : 2 - cyc;
         const band = Math.floor(this.power * 8);
@@ -155,6 +164,8 @@ export class Sim {
         b.x += b.vx * STEP;
         b.y += b.vy * STEP;
         b.rot += b.spinRate * STEP;
+        // Only test landing on the tick the bottle crosses the ground, so replay
+        // cannot disagree about "which frame we hit".
         if (b.vy > 0 && prevY < 0 && b.y >= 0) {
           const res = this.tryLand();
           if (res && res.type !== 'tip') {
@@ -251,7 +262,7 @@ export class Sim {
           b.tipDir = Math.sign(dx) || 1;
           return { type: 'tip', plat: i };
         }
-        if (frac < 0.34 && i > this.curIdx) return { type: 'perfect', plat: i };
+        // Perfect stripe is the center 34% of a crate, and only when advancing.
         if (frac > 0.78) return { type: 'edge', plat: i };
         return { type: 'ok', plat: i };
       }

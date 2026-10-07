@@ -1,3 +1,7 @@
+/**
+ * Access JWTs (15 min), rotating refresh tokens (httpOnly cookie), and hashed OTPs.
+ * Refresh tokens are stored as sha256 so a leaked DB row is not a usable cookie.
+ */
 import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
 import { SignJWT, jwtVerify } from 'jose';
 

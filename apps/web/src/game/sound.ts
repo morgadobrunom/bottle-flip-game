@@ -1,3 +1,4 @@
+/** Tiny oscillator SFX. Unlock from a tap/key so iOS will actually play. */
 let ctx: AudioContext | null = null;
 let enabled = true;
 

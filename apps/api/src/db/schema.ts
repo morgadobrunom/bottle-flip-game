@@ -1,3 +1,7 @@
+/**
+ * Drizzle schema for the campaign: identity, catalog, verified runs, tokens,
+ * missions, budgeted rewards, and append-only events.
+ */
 import type { Background, Bottle, Campaign, Mission, Reward } from '@bottle-flip/content';
 import type { RunInput } from '@bottle-flip/engine';
 import { sql } from 'drizzle-orm';
@@ -34,6 +38,7 @@ export const players = pgTable('players', {
   equippedBackgroundId: text('equipped_background_id').notNull().default('night-soda'),
   sound: boolean('sound').notNull().default(true),
   verifiedAt: timestamp('verified_at', { withTimezone: true }),
+  /** Set when this anonymous player was absorbed into a phone-owned account. */
   mergedInto: uuid('merged_into'),
   createdAt: createdAt(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -135,6 +140,7 @@ export const runs = pgTable(
     campaignId: text('campaign_id').references(() => campaigns.id),
     seed: bigint('seed', { mode: 'number' }).notNull(),
     status: runStatus('status').notNull().default('started'),
+    /** Client input log; filled on submit so we can audit a verified score. */
     inputs: jsonb('inputs').$type<RunInput[]>(),
     flips: integer('flips'),
     perfects: integer('perfects'),
@@ -195,6 +201,7 @@ export const rewards = pgTable(
       .references(() => players.id),
     campaignId: text('campaign_id').references(() => campaigns.id),
     source: text('source').notNull(),
+    /** Unique with playerId so claiming the same mission window twice is a no-op. */
     sourceRef: text('source_ref').notNull(),
     reward: jsonb('reward').$type<Reward>().notNull(),
     costKes: integer('cost_kes').notNull().default(0),

@@ -1,3 +1,7 @@
+/**
+ * Ranked boards: only verified players with flips > 0 in the Nairobi window.
+ * Rank is each player's best verified run in that window, earliest first on ties.
+ */
 import { describeReward, type LeaderboardPeriod } from '@bottle-flip/content';
 import { maskPhone, windowFor, type LeaderboardResponse, type Window } from '@bottle-flip/shared';
 import { and, asc, count, desc, eq, gt, gte, isNotNull, lt, max, min, or, sql } from 'drizzle-orm';

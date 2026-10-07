@@ -1,3 +1,7 @@
+/**
+ * Fastify app factory. Tests call this with PGlite + MemoryQueue; production
+ * passes a real pool, SMS/credit providers, and pg-boss.
+ */
 import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';

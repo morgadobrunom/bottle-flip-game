@@ -1,3 +1,4 @@
+/** Snapshot closed daily/weekly/monthly boards once, then issue prize-band rewards. */
 import type { LeaderboardPeriod } from '@bottle-flip/content';
 import { previousWindow } from '@bottle-flip/shared';
 import { and, eq } from 'drizzle-orm';

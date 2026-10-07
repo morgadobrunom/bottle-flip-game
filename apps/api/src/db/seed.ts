@@ -1,3 +1,4 @@
+/** CLI: load DATABASE_URL and upsert seed catalog / campaign / missions. */
 import { createDb, createPool } from './client';
 import { seedContent } from './seed-content';
 

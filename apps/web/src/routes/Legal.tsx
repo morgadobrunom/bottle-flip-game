@@ -1,3 +1,4 @@
+/** Placeholder terms/privacy until campaign legal copy is supplied. */
 import { Screen, TopBar } from '../components/ui';
 
 const DOCS = {

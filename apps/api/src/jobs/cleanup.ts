@@ -1,3 +1,4 @@
+/** Expire OTPs, abandon stale runs, prune sessions/events, requeue stuck credits. */
 import { and, eq, inArray, lt, or } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import { events, otpRequests, rewards, runs, sessions } from '../db/schema';

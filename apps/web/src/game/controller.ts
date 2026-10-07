@@ -19,6 +19,7 @@ export interface Hud {
 
 const MAX_FRAME = 0.1;
 const END_DELAY_MS = 700;
+/** Clicks on UI must not also start a flip. data-no-flip covers overlays like game-over. */
 const INTERACTIVE = 'button, a, input, label, select, textarea, [data-no-flip]';
 
 /** Owns the canvas, the simulation clock and input. React only reads the HUD snapshot. */

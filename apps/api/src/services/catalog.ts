@@ -1,3 +1,4 @@
+/** Catalog listing, equip checks, and coin purchases (row-locked). */
 import { levelFor, type Background, type Bottle } from '@bottle-flip/content';
 import { isOwned, itemStatus, type CatalogEntry, type CatalogResponse } from '@bottle-flip/shared';
 import { and, asc, eq, sql } from 'drizzle-orm';

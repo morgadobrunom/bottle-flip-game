@@ -1,3 +1,4 @@
+/** Player, catalog, runs, leaderboard, missions. All routes require a Bearer token. */
 import {
   LeaderboardQuery,
   PatchMeBody,

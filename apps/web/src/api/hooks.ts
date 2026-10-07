@@ -1,3 +1,4 @@
+/** TanStack Query wrappers around the API. Mutations invalidate related caches. */
 import type { LeaderboardPeriod } from '@bottle-flip/content';
 import type {
   CatalogResponse,

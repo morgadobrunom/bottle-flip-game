@@ -1,3 +1,4 @@
+/** HTTP entrypoint: Sentry, Postgres, pg-boss (enqueue only), listen, SIGTERM. */
 import './instrument';
 import * as Sentry from '@sentry/node';
 import { buildApp } from './app';

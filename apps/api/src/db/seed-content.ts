@@ -1,3 +1,4 @@
+/** Idempotent upsert of campaign, catalog, missions, and optional local token codes. */
 import {
   CampaignSchema,
   CatalogSchema,

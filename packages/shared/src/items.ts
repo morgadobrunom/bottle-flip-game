@@ -1,3 +1,4 @@
+/** Resolves a catalog item to equipped / owned / buy / level-locked / sponsored. */
 import type { Background, Bottle } from '@bottle-flip/content';
 
 export type ItemStatus =

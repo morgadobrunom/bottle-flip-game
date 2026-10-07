@@ -1,3 +1,4 @@
+/** Step 2: six OTP digits with paste and a 45s resend timer. */
 import { useEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router';
 import { useRequestOtp, useVerifyOtp } from '../api/hooks';

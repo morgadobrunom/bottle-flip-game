@@ -1,3 +1,7 @@
+/**
+ * Player rows, anonymous bootstrap, refresh rotation, and campaign lookup.
+ * Views always mask the phone. A player with mergedInto set is treated as gone.
+ */
 import { levelFor } from '@bottle-flip/content';
 import { maskPhone, type CampaignView, type PlayerView } from '@bottle-flip/shared';
 import { and, eq, gt, isNull } from 'drizzle-orm';

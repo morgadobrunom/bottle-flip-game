@@ -1,3 +1,4 @@
+/** Bottles/backgrounds grid with a live preview canvas and buy/equip. */
 import type { Background, Bottle } from '@bottle-flip/content';
 import { Sim } from '@bottle-flip/engine';
 import { Renderer, type Theme } from '@bottle-flip/engine/render';

@@ -1,3 +1,7 @@
+/**
+ * Start a seeded run and submit an input log. The claimed score must match a
+ * headless replay; wall-clock time must not be much shorter than simulated time.
+ */
 import { coinsFor } from '@bottle-flip/content';
 import { STEP, replay } from '@bottle-flip/engine';
 import type { RunSubmitBody, RunSubmitResponse } from '@bottle-flip/shared';
@@ -57,6 +61,7 @@ export async function submitRun(
     throw await reject('mismatch');
   }
   const playedMs = result.endTick * STEP * 1000;
+  // 15% slack plus 3s for network/tab throttling; anything faster is a speedhack.
   if (elapsedMs < playedMs * 0.85 - 3000) throw await reject('too_fast');
 
   const coinsEarned = coinsFor(result.flips, result.perfects);

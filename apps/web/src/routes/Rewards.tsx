@@ -1,3 +1,4 @@
+/** Leaderboard (Nairobi windows, prize bands) and missions (claim / verify to claim). */
 import type { LeaderboardPeriod } from '@bottle-flip/content';
 import { formatCountdown, type MissionView } from '@bottle-flip/shared';
 import { useEffect, useState } from 'react';

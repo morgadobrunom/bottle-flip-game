@@ -1,3 +1,4 @@
+/** Sound, nickname, verify / log out. */
 import { NicknameSchema } from '@bottle-flip/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';

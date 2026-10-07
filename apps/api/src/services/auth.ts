@@ -1,3 +1,8 @@
+/**
+ * OTP request/verify. On verify, an anonymous player is merged into the phone
+ * owner (coins, items, runs) and optional bottle-token redemption runs in the
+ * same transaction as consent.
+ */
 import { maskPhone, normalizeKenyanPhone, type OtpVerifyBody, type TokenRedeemResult } from '@bottle-flip/shared';
 import { and, count, desc, eq, gt, gte, isNull, sql } from 'drizzle-orm';
 import { hashOtp, newOtpCode, safeEqualHex } from '../auth/tokens';
