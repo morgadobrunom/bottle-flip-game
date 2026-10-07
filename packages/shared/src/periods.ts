@@ -36,6 +36,13 @@ function offsetMs(date: Date, timeZone: string): number {
   return asUtc - Math.floor(date.getTime() / 1000) * 1000;
 }
 
+/**
+ * Converts a UTC Date to a local calendar date in the given timezone.
+ * @param date - UTC Date object.
+ * @param timeZone - IANA timezone string (e.g., "Africa/Nairobi").
+ * @returns Object with year, month [1-12], and day [1-31].
+ * @private
+ */
 export function localDate(date: Date, timeZone: string): LocalDate {
   const shifted = new Date(date.getTime() + offsetMs(date, timeZone));
   return { y: shifted.getUTCFullYear(), m: shifted.getUTCMonth() + 1, d: shifted.getUTCDate() };
@@ -46,6 +53,13 @@ function startOfLocal(ld: LocalDate, timeZone: string): Date {
   return new Date(guess - offsetMs(new Date(guess), timeZone));
 }
 
+/**
+ * Generates a stable day identifier key in YYYY-MM-DD format for a given timezone.
+ * Used as a window key for daily leaderboards and missions.
+ * @param date - UTC Date.
+ * @param timeZone - IANA timezone string.
+ * @returns Day key string (e.g., "2026-10-07").
+ */
 export function dayKey(date: Date, timeZone: string): string {
   const ld = localDate(date, timeZone);
   return `${ld.y}-${pad(ld.m)}-${pad(ld.d)}`;
@@ -66,7 +80,14 @@ function fromUtcMidnight(utc: number): LocalDate {
   return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, d: d.getUTCDate() };
 }
 
-/** The leaderboard or mission window containing `date`, in the campaign's local time. */
+/**
+ * Returns the leaderboard or mission window containing the given date in the campaign's timezone.
+ * Windows are stable: the same date always returns the same window start/end.
+ * @param period - Window period: 'daily', 'weekly', 'monthly', or 'once'.
+ * @param date - The date to find the window for (UTC).
+ * @param timeZone - IANA timezone string (e.g., "Africa/Nairobi").
+ * @returns Window with key (YYYY-MM-DD, YYYY-Www, YYYY-MM, or "once"), start, and end.
+ */
 export function windowFor(period: MissionPeriod, date: Date, timeZone: string): Window {
   const ld = localDate(date, timeZone);
   switch (period) {
@@ -92,12 +113,29 @@ export function windowFor(period: MissionPeriod, date: Date, timeZone: string): 
   }
 }
 
-/** The window that ended most recently before the one containing `date`. */
+/**
+ * Returns the window that ended most recently before the one containing the given date.
+ * Used to query previous leaderboard snapshots for ranking history.
+ * @param period - Window period: 'daily', 'weekly', or 'monthly' (not 'once').
+ * @param date - Reference date (UTC).
+ * @param timeZone - IANA timezone string.
+ * @returns The previous window.
+ */
 export function previousWindow(period: Exclude<MissionPeriod, 'once'>, date: Date, timeZone: string): Window {
   const current = windowFor(period, date, timeZone);
   return windowFor(period, new Date(current.start.getTime() - 1), timeZone);
 }
 
+/**
+ * Formats a countdown duration (milliseconds) for display.
+ * Dynamically chooses units (days, hours, minutes) to keep the string short.
+ *
+ * @param ms - Milliseconds remaining.
+ * @returns Display string (e.g., "2d 5h", "45m", "1d").
+ * @example
+ * formatCountdown(3600000) // "1h 0m"
+ * formatCountdown(86400000) // "1d"
+ */
 export function formatCountdown(ms: number): string {
   const totalMinutes = Math.max(0, Math.floor(ms / 60_000));
   const days = Math.floor(totalMinutes / 1440);

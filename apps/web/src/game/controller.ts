@@ -36,6 +36,14 @@ export class GameController {
   private endTimer: ReturnType<typeof setTimeout> | null = null;
   onRunEnd: ((sim: Sim) => void) | null = null;
 
+  /**
+   * Creates a new game controller: initializes simulation, renderer, and event handlers.
+   * Starts the animation loop and respects prefers-reduced-motion.
+   * Call destroy() when unmounting the component.
+   *
+   * @param canvas - HTMLCanvasElement to render the game into.
+   * @param theme - Initial bottle and background colors.
+   */
   constructor(
     private readonly canvas: HTMLCanvasElement,
     theme: Theme,
@@ -54,6 +62,10 @@ export class GameController {
     this.raf = requestAnimationFrame(this.frame);
   }
 
+  /**
+   * Cleans up the controller: cancels animation loop and removes event listeners.
+   * Must be called when the component unmounts to prevent memory leaks.
+   */
   destroy() {
     cancelAnimationFrame(this.raf);
     if (this.endTimer) clearTimeout(this.endTimer);
@@ -66,17 +78,36 @@ export class GameController {
     document.removeEventListener('visibilitychange', this.onVisibility);
   }
 
+  /**
+   * Subscribes a React component to HUD state changes.
+   * Listener is called whenever the HUD updates (mode, score, toasts, etc).
+   *
+   * @param fn - Callback invoked on every state change.
+   * @returns Unsubscribe function to remove the listener.
+   */
   subscribe = (fn: () => void) => {
     this.listeners.add(fn);
     return () => this.listeners.delete(fn);
   };
 
+  /**
+   * Returns a snapshot of the current HUD state.
+   * @returns Hud object with mode, flips, perfects, streak, coins, etc.
+   */
   getHud = () => this.hud;
 
+  /**
+   * Returns the current Sim instance for advanced queries (e.g., platforms, bottle state).
+   * @returns The Sim object controlling gameplay.
+   */
   get currentSim() {
     return this.sim;
   }
 
+  /**
+   * Updates the bottle and background colors (e.g., when customizing or equipping a new skin).
+   * @param theme - New bottle and background theme.
+   */
   setTheme(theme: Theme) {
     this.renderer.setTheme(theme);
   }

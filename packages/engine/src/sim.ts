@@ -64,7 +64,14 @@ export interface RunResult {
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
-/** Maps charge power 0..1 to launch speed. Same formula the original HTML used. */
+/**
+ * Maps charge power [0, 1] to horizontal and vertical launch velocities.
+ * Uses the same formula as the original HTML bottle flip game.
+ * Low power (~150vx, ~430vy) arcs high and far; high power (~560vx, ~970vy) shoots more horizontally.
+ *
+ * @param power - Normalized charge level from 0 (just tapped) to 1 (full charge).
+ * @returns Object with vx (horizontal) and vy (vertical, downward) velocities in pixels/second.
+ */
 export function launchVelocity(power: number): { vx: number; vy: number } {
   return { vx: 130 + power * 430, vy: 430 + power * 540 };
 }
@@ -95,6 +102,13 @@ export class Sim {
   private lastBand = -1;
   private pending: SimEvent[] = [];
 
+  /**
+   * Creates a new deterministic simulation instance.
+   * Initializes the bottle on the first platform and spawns two additional platforms.
+   * The seeded PRNG controls all gameplay randomness: platform gaps, widths, and movement.
+   *
+   * @param seed - Seeded integer for mulberry32 PRNG. Same seed always produces the same run.
+   */
   constructor(seed: number) {
     this.seed = seed >>> 0;
     this.rand = mulberry32(this.seed);
@@ -109,6 +123,13 @@ export class Sim {
     return this.tick * STEP;
   }
 
+  /**
+   * Handles a button/tap press: transitions from idle to charge state.
+   * Can only press when in idle state. Records the input tick for replay.
+   * Charging power oscillates triangularly: quick taps get low power, long holds cycle 0→1→0.
+   *
+   * @returns true if the press was accepted (was in idle), false otherwise.
+   */
   press(): boolean {
     if (this.state !== 'idle') return false;
     this.state = 'charge';
@@ -119,6 +140,13 @@ export class Sim {
     return true;
   }
 
+  /**
+   * Handles a button/tap release: launches the bottle from charge state.
+   * Can only release when in charge state. Records the input tick for replay.
+   * The power at release time determines launch velocity.
+   *
+   * @returns true if the release was accepted (was in charge), false otherwise.
+   */
   release(): boolean {
     if (this.state !== 'charge') return false;
     this.inputs.push({ tick: this.tick, type: 'up' });
@@ -126,14 +154,36 @@ export class Sim {
     return true;
   }
 
+  /**
+   * Unified input handler for press and release events.
+   * Used by the server replay function to feed recorded inputs back into a Sim.
+   *
+   * @param type - 'down' for press, 'up' for release.
+   * @returns true if the input was accepted, false if rejected (wrong game state).
+   */
   input(type: InputType): boolean {
     return type === 'down' ? this.press() : this.release();
   }
 
+  /**
+   * Returns the final run score and metrics.
+   * Should only be called after the run ends (state === 'dead').
+   * Used by the API to verify the client's claimed score during run submission.
+   *
+   * @returns Object with flips (total landings), perfects (center stripe hits), maxStreak, and endTick (game end time).
+   */
   result(): RunResult {
     return { flips: this.flips, perfects: this.perfects, maxStreak: this.maxStreak, endTick: this.endTick ?? this.tick };
   }
 
+  /**
+   * Advances the simulation by one timestep (1/120 second).
+   * Updates platform positions, physics, state machine, and collision detection.
+   * Returns events that occurred this tick: launches, landings, charge bands, failures.
+   * Must be called every frame to progress gameplay toward the end state.
+   *
+   * @returns Array of SimEvent objects that occurred during this step (may be empty).
+   */
   step(): SimEvent[] {
     const events = this.pending;
     this.pending = [];
@@ -203,6 +253,13 @@ export class Sim {
     return events;
   }
 
+  /**
+   * Computes difficulty parameters for a platform based on the flip count.
+   * Difficulty increases: platforms get narrower, gaps get wider, and moving platforms become more common.
+   * @param n - Number of flips achieved so far (difficulty ramp index).
+   * @returns Object with platform width, gap range, movement probability, amplitude, and speed.
+   * @private
+   */
   private difficulty(n: number) {
     return {
       w: clamp(94 - n * 2.4, 34, 94),
@@ -214,10 +271,24 @@ export class Sim {
     };
   }
 
+  /**
+   * Returns a random value uniformly distributed in [a, b).
+   * Uses the seeded PRNG to ensure deterministic replay.
+   * @param a - Lower bound (inclusive).
+   * @param b - Upper bound (exclusive).
+   * @returns A value in [a, b).
+   * @private
+   */
   private range(a: number, b: number): number {
     return a + this.rand() * (b - a);
   }
 
+  /**
+   * Generates and adds a new platform to the rightmost end of the level.
+   * Platform properties (width, gap, movement) are computed from the difficulty curve.
+   * Always keeps at least 2 platforms ahead of the current bottle position.
+   * @private
+   */
   private spawnPlatform() {
     const prev = this.platforms[this.platforms.length - 1]!;
     const d = this.difficulty(this.flips + (this.platforms.length - 1 - this.curIdx));
@@ -230,6 +301,12 @@ export class Sim {
     this.platforms.push({ cx, baseCx: cx, w: d.w, move, locked: false });
   }
 
+  /**
+   * Positions the bottle on a platform and locks that platform.
+   * Called after successful landings to transition to settle state, or during initialization.
+   * @param i - Index of the platform to place the bottle on.
+   * @private
+   */
   private placeBottleOn(i: number) {
     this.curIdx = i;
     const p = this.platforms[i]!;
@@ -237,6 +314,13 @@ export class Sim {
     Object.assign(this.bottle, { x: p.cx, y: 0, vx: 0, vy: 0, rot: 0 });
   }
 
+  /**
+   * Launches the bottle from the current platform with a given charge power.
+   * Computes spin rate so the bottle does 1-7 full rotations before landing.
+   * Transitions to 'fly' state and emits a launch event.
+   * @param power - Normalized charge level [0, 1] determining launch velocity.
+   * @private
+   */
   private launch(power: number) {
     const { vx, vy } = launchVelocity(power);
     const b = this.bottle;
@@ -251,6 +335,17 @@ export class Sim {
     this.pending.push({ type: 'launch', power });
   }
 
+  /**
+   * Tests collision with platforms when bottle crosses y=0 (ground level).
+   * Classifies landings by horizontal position:
+   *   - 'perfect': center 34% of a platform, advancing platforms only (worth 2 coins)
+   *   - 'ok': middle region (worth 1 coin)
+   *   - 'edge': outer 22% (worth 1 coin, harder)
+   *   - 'tip': edge miss causing a bounce (fails the run)
+   * Returns null if the bottle doesn't hit any platform.
+   * @returns Landing classification and platform index, or null if no collision.
+   * @private
+   */
   private tryLand(): { type: LandType | 'tip'; plat: number } | null {
     const b = this.bottle;
     for (let i = this.curIdx; i < this.platforms.length; i++) {
@@ -271,6 +366,16 @@ export class Sim {
     return null;
   }
 
+  /**
+   * Processes a successful landing (not a tip).
+   * Updates flip count, perfect streak, and platform movement.
+   * Transitions to 'settle' state for bottle stabilization animation.
+   * Spawns new platforms to keep the level generation ahead of the bottle.
+   * @param land - Classification of the landing (perfect, ok, edge).
+   * @param plat - Index of the platform landed on.
+   * @returns SimEvent describing the landing for audio/visuals.
+   * @private
+   */
   private landSuccess(land: LandType, plat: number): SimEvent {
     const gained = plat > this.curIdx;
     const p = this.platforms[plat]!;
@@ -297,6 +402,14 @@ export class Sim {
     return { type: 'land', land, gained, streak: this.streak, x: this.bottle.x };
   }
 
+  /**
+   * Ends the run due to a landing failure: lip (tipped), gap (missed), or short (too close).
+   * Transitions to 'dead' state; the bottle falls until off-screen.
+   * The run can no longer accept inputs and no more flips will be counted.
+   * @param reason - Type of failure: 'lip' (tipped), 'gap' (too far), or 'short' (too near).
+   * @returns SimEvent describing the failure.
+   * @private
+   */
   private fail(reason: FailReason): SimEvent {
     this.failReason = reason;
     this.deadTicks = 0;

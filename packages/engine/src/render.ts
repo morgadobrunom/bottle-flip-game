@@ -54,6 +54,16 @@ export class Renderer {
   private particles: Particle[] = [];
   private readonly stars: Star[] = [];
 
+  /**
+   * Creates a new Canvas 2D renderer for a Sim.
+   * Initializes the canvas context, theme, stars, and resizes to fit the container.
+   * Call destroy() when done to prevent memory leaks.
+   *
+   * @param canvas - HTMLCanvasElement to render into.
+   * @param theme - Bottle and background color scheme from the catalog.
+   * @param opts - Optional rendering configuration (motion reduction, camera position).
+   * @throws Error if canvas 2D context is unavailable.
+   */
   constructor(
     private readonly canvas: HTMLCanvasElement,
     theme: Theme,
@@ -70,10 +80,20 @@ export class Renderer {
     this.resize();
   }
 
+  /**
+   * Updates the bottle and background colors.
+   * Can be called anytime to switch skins without re-creating the renderer.
+   * @param theme - New bottle and background theme to apply.
+   */
   setTheme(theme: Theme) {
     this.theme = theme;
   }
 
+  /**
+   * Handles canvas resize events: updates internal dimensions and DPI scaling.
+   * Call when the canvas element changes size (e.g., window resize, orientation change).
+   * Maintains crisp rendering on high-DPI displays while capping scale to 2x for performance.
+   */
   resize() {
     const dpr = Math.min(globalThis.devicePixelRatio || 1, 2);
     this.W = this.canvas.clientWidth || this.canvas.width;
@@ -84,12 +104,22 @@ export class Renderer {
     this.groundY = this.H * this.opts.groundRatio;
   }
 
+  /**
+   * Resets camera position and particles to the bottle's current location.
+   * Called at the start of a new run or when transitioning scenes.
+   * @param sim - The Sim whose bottle position anchors the camera.
+   */
   snapCamera(sim: Sim) {
     this.camX = sim.bottle.x - this.W * this.opts.anchorX;
     this.particles = [];
     this.shake = 0;
   }
 
+  /**
+   * Processes gameplay events to trigger visual effects.
+   * Landings spawn particle bursts; failures trigger screen shake.
+   * @param events - Array of SimEvents from the latest sim.step() call.
+   */
   handle(events: SimEvent[]) {
     for (const e of events) {
       if (e.type === 'land') {
@@ -101,6 +131,16 @@ export class Renderer {
     }
   }
 
+  /**
+   * Renders a complete frame: background, platforms, particles, bottle, and charge UI.
+   * Smoothly interpolates bottle motion between ticks for fluid animation.
+   * Updates camera position and handles shake decay.
+   *
+   * @param sim - The Sim to render (null for attract/menu mode).
+   * @param alpha - Interpolation factor [0, 1) between prev and current bottle state.
+   * @param frameDt - Frame deltaTime in seconds, for particle and shake updates.
+   * @param timeSec - Wall-clock simulation time, used for platform animation.
+   */
   draw(sim: Sim | null, alpha: number, frameDt: number, timeSec: number) {
     const bottle = sim ? this.interpolatedBottle(sim, alpha) : null;
     if (bottle) {

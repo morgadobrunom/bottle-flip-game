@@ -19,12 +19,31 @@ export const OTP_MAX_ATTEMPTS = 5;
 const MAX_PER_PHONE_10_MIN = 3;
 const MAX_PER_IP_HOUR = 10;
 
+/**
+ * Validates and normalizes a phone input, throwing if invalid.
+ * @param input - Raw phone input string.
+ * @returns E.164 formatted phone number.
+ * @throws badRequest if the phone is not a valid Kenyan number.
+ */
 export function parsePhone(input: string): string {
   const phone = normalizeKenyanPhone(input);
   if (!phone) throw badRequest('invalid_phone', 'Enter a Kenyan mobile number like 0712 345 678');
   return phone;
 }
 
+/**
+ * Initiates OTP flow: validates phone input, checks rate limits, generates code, and sends SMS.
+ * Enforces per-phone and per-IP rate limits to prevent abuse.
+ *
+ * @param db - Database connection.
+ * @param sms - SMS provider to send the code.
+ * @param pepper - Cryptographic pepper for HMAC hashing the OTP code.
+ * @param rawPhone - User-provided phone number (any format).
+ * @param ip - Client IP address for rate limiting.
+ * @param now - Optional current date (for testing).
+ * @returns Object with maskedPhone, resendInSeconds, and expiresInSeconds.
+ * @throws badRequest or tooMany if validation or rate limits fail.
+ */
 export async function requestOtp(db: Db, sms: SmsProvider, pepper: string, rawPhone: string, ip: string, now = new Date()) {
   const phone = parsePhone(rawPhone);
   const [latest] = await db

@@ -19,7 +19,28 @@ export type ReplayError =
 
 export type ReplayOutcome = { ok: true; result: RunResult } | { ok: false; error: ReplayError; tick?: number };
 
-/** Re-runs a recorded game from its seed and inputs. The run must end in a miss. */
+/**
+ * Anti-cheat replay: re-runs a recorded game from its seed and inputs.
+ * Validates the client's claimed score by simulating the same inputs on the server.
+ * The run must end in a miss (dead state); inputs are checked for validity, ordering,
+ * and time constraints. Used to verify submitted runs before crediting scores.
+ *
+ * @param seed - The seeded PRNG value from the run start response.
+ * @param inputs - Array of player inputs: tick timestamps and press/release events.
+ * @param maxTicks - Maximum simulation ticks allowed (default 30min * 120fps = 216000).
+ *
+ * @returns An outcome object:
+ *   - `{ ok: true, result }` if valid; result contains flips, perfects, maxStreak, endTick.
+ *   - `{ ok: false, error, tick? }` if invalid; error describes the rejection reason.
+ *
+ * @example
+ * const outcome = replay(12345, inputs);
+ * if (outcome.ok) {
+ *   console.log(`Verified: ${outcome.result.flips} flips`);
+ * } else {
+ *   console.log(`Rejected: ${outcome.error}`);
+ * }
+ */
 export function replay(seed: number, inputs: RunInput[], maxTicks = MAX_RUN_TICKS): ReplayOutcome {
   if (inputs.length > MAX_INPUTS) return { ok: false, error: 'too_many_inputs' };
   for (let i = 0; i < inputs.length; i++) {

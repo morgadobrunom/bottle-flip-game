@@ -14,6 +14,13 @@ export interface OwnershipContext {
   equippedId: string;
 }
 
+/**
+ * Determines if an item is owned or accessible by the player.
+ * Default items are always owned; level-locked items are accessible if the player's level is high enough.
+ * @param item - The catalog item (bottle or background).
+ * @param ctx - Player ownership context (level and ownedIds).
+ * @returns true if the player owns or can access the item.
+ */
 export function isOwned(item: Bottle | Background, ctx: Omit<OwnershipContext, 'equippedId'>): boolean {
   switch (item.unlock.type) {
     case 'default':
@@ -25,6 +32,14 @@ export function isOwned(item: Bottle | Background, ctx: Omit<OwnershipContext, '
   }
 }
 
+/**
+ * Determines the UI status of a catalog item for a player.
+ * Classifies items as: equipped, owned, buyable (with coin cost), level-locked, or mission-locked.
+ *
+ * @param item - The catalog item (bottle or background).
+ * @param ctx - Complete player ownership context including equipped item and level.
+ * @returns ItemStatus object describing the item's availability and cost.
+ */
 export function itemStatus(item: Bottle | Background, ctx: OwnershipContext): ItemStatus {
   if (item.id === ctx.equippedId) return { status: 'equipped' };
   if (isOwned(item, ctx)) return { status: 'owned' };

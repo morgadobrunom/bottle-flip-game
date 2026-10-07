@@ -21,8 +21,15 @@ export interface IssueRewardInput {
 }
 
 /**
- * Reserves campaign budget and records a reward to be credited. Must run inside a
- * transaction: the campaign row lock serializes spending so the budget can't be exceeded.
+ * Reserves campaign budget and records a reward to be credited.
+ * Must run inside a transaction: the campaign row lock (FOR UPDATE) serializes spending
+ * to prevent budget overruns. Enforces daily data cap for mission rewards.
+ * Uses unique sourceRef constraint to prevent duplicate rewards from retries.
+ *
+ * @param tx - Database transaction (caller must have begun transaction).
+ * @param input - IssueRewardInput with playerId, campaignId, source, sourceRef, reward details.
+ * @returns The inserted reward row for querying status.
+ * @throws conflict if budget exhausted, daily cap exceeded, duplicate sourceRef, or campaign not found.
  */
 export async function issueReward(tx: Db, input: IssueRewardInput): Promise<RewardRow> {
   const now = input.now ?? new Date();
@@ -69,6 +76,13 @@ export async function issueReward(tx: Db, input: IssueRewardInput): Promise<Rewa
   return row;
 }
 
+/**
+ * Refunds campaign budget when a reward fails to credit (e.g., SMS delivery failed).
+ * Only refunds rewards with a cost; free rewards (coins, skins) have no effect.
+ *
+ * @param db - Database connection.
+ * @param reward - The reward row to refund.
+ */
 export async function refundReward(db: Db, reward: RewardRow) {
   if (!reward.campaignId || reward.costKes === 0) return;
   await db
@@ -77,6 +91,15 @@ export async function refundReward(db: Db, reward: RewardRow) {
     .where(eq(campaigns.id, reward.campaignId));
 }
 
+/**
+ * Transforms a reward database row into a view-safe object for API responses.
+ * Masks the phone number and includes status, description, and timestamps.
+ *
+ * @param r - RewardRow from the database.
+ * @param phone - E.164 phone number (will be masked), or null for non-phone rewards.
+ * @param provider - Provider name (e.g., "Safaricom", "Airtel").
+ * @returns RewardView object safe for JSON serialization.
+ */
 export function toRewardView(r: RewardRow, phone: string | null, provider: string): RewardView {
   return {
     id: r.id,

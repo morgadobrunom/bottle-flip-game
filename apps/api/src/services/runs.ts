@@ -15,6 +15,18 @@ import { campaignIsLive, getCampaign, track } from './players';
 
 const MAX_STARTS_PER_MINUTE = 20;
 
+/**
+ * Creates a new gameplay run with a fresh seed.
+ * Enforces per-player rate limiting (20 starts per minute).
+ * Associates the run with the active campaign if it's currently live.
+ *
+ * @param db - Database connection.
+ * @param playerId - The player starting the run.
+ * @param campaignId - Campaign context (may not be associated if not live).
+ * @param now - Optional current date (for testing).
+ * @returns Object with runId and seed for client replay and submission.
+ * @throws tooMany if the player exceeds rate limit.
+ */
 export async function startRun(db: Db, playerId: string, campaignId: string, now = new Date()) {
   const [recent] = await db
     .select({ n: count() })
@@ -29,6 +41,17 @@ export async function startRun(db: Db, playerId: string, campaignId: string, now
   return { runId: run!.id, seed: run!.seed };
 }
 
+/**
+ * Validates and credits a completed run: anti-cheat replay, time checks, coin payout.
+ * Replays the input log server-side to verify the claimed score is authentic.
+ * Ensures wall-clock time is not suspiciously faster than simulated time (speedhack detection).
+ * Credits coins to the player and updates best-flips record in a transaction.
+ *
+ * @param db - Database connection.
+ * @param opts - Options object with playerId, runId, claimed result, TTL, campaign context, and optional now.
+ * @returns RunSubmitResponse with verified results, earned coins, and leaderboard context.
+ * @throws notFound if run not found; conflict if already submitted; AppError with rejection reason if anti-cheat fails.
+ */
 export async function submitRun(
   db: Db,
   opts: { playerId: string; runId: string; body: RunSubmitBody; ttlMinutes: number; campaignId: string; now?: Date },
