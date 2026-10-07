@@ -263,6 +263,7 @@ export class Sim {
           return { type: 'tip', plat: i };
         }
         // Perfect stripe is the center 34% of a crate, and only when advancing.
+        if (frac < 0.34 && i > this.curIdx) return { type: 'perfect', plat: i };
         if (frac > 0.78) return { type: 'edge', plat: i };
         return { type: 'ok', plat: i };
       }
