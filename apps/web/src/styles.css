@@ -284,6 +284,7 @@ a {
   justify-content: space-between;
   gap: 10px;
   min-height: 44px;
+  flex-shrink: 0;
 }
 
 .topbar .h2 {
@@ -379,6 +380,7 @@ a {
 }
 
 .tabs {
+  flex-shrink: 0;
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
@@ -386,6 +388,20 @@ a {
   border-radius: 14px;
   overflow: hidden;
   background: rgba(20, 10, 44, 0.6);
+}
+
+/* Scrolls under the pinned top bar and tabs. */
+.tab-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tab-panel > * {
+  flex-shrink: 0;
 }
 
 .tab {

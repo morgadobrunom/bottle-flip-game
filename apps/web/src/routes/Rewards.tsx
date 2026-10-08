@@ -23,7 +23,9 @@ export function Rewards() {
           </Link>
         ))}
       </div>
-      {tab === 'leaderboard' ? <Leaderboard /> : <Missions />}
+      <div className="tab-panel" role="tabpanel">
+        {tab === 'leaderboard' ? <Leaderboard /> : <Missions />}
+      </div>
     </Screen>
   );
 }
